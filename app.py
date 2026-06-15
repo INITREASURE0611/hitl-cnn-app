@@ -107,8 +107,25 @@ class EfficientNetB4_HITL(nn.Module):
         return self.classifier(x)
 
 
+# ── MODEL SOURCE ──────────────────────────────────────────────────────────────
+# Hosted on Hugging Face — downloaded automatically on first app load.
+# Student: 2443512 | Model: EfficientNet-B4 HITL-CNN (99.77% test accuracy)
+MODEL_URL = "https://huggingface.co/Initreasure/hitl-cnn-model/resolve/main/efficientnet_b4_hitl.pt"
+MODEL_CACHE_PATH = "/tmp/efficientnet_b4_hitl.pt"
+
+
 # ── LOAD MODEL ────────────────────────────────────────────────────────────────
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
+def download_default_model(url, dest_path):
+    """Download the trained model from Hugging Face on first run.
+    Cached so it only downloads once per app session."""
+    import urllib.request
+    if not os.path.exists(dest_path):
+        urllib.request.urlretrieve(url, dest_path)
+    return dest_path
+
+
+@st.cache_resource(show_spinner=False)
 def load_model(model_path):
     checkpoint  = torch.load(model_path, map_location='cpu')
     class_names = checkpoint['class_names']
@@ -224,15 +241,14 @@ def main():
 
     # ── SIDEBAR ───────────────────────────────────────────────────────────────
     with st.sidebar:
-        st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/320px-Placeholder_view_vector.svg.png",
-                 width=60) if False else None
         st.markdown("### ⚙️ System Settings")
 
-        model_file = st.file_uploader(
-            "Upload trained model (.pt file)",
-            type=['pt', 'pth'],
-            help="Upload efficientnet_b4_hitl.pt from your Kaggle output"
-        )
+        with st.expander("🔄 Use a different model file (optional)"):
+            model_file = st.file_uploader(
+                "Upload trained model (.pt file)",
+                type=['pt', 'pth'],
+                help="Optional — overrides the default hosted model for this session"
+            )
 
         st.markdown("---")
         threshold = st.slider(
@@ -277,10 +293,33 @@ def main():
                 )
 
     # ── MAIN CONTENT ──────────────────────────────────────────────────────────
-    if model_file is None:
-        st.info("👈  Upload your trained model file in the sidebar to begin. "
-                "The model file is `efficientnet_b4_hitl.pt` from your Kaggle output.")
+    # Load model — uploaded file takes priority, otherwise auto-download default
+    if model_file is not None:
+        with st.spinner("Loading uploaded model..."):
+            try:
+                import tempfile
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.pt') as tmp:
+                    tmp.write(model_file.read())
+                    tmp_path = tmp.name
+                model, class_names = load_model(tmp_path)
+                st.sidebar.success(f"✓ Custom model loaded — {len(class_names)} classes")
+            except Exception as e:
+                st.error(f"Error loading uploaded model: {e}")
+                return
+    else:
+        with st.spinner("Loading EfficientNet-B4 model (first load takes ~30s)..."):
+            try:
+                model_path = download_default_model(MODEL_URL, MODEL_CACHE_PATH)
+                model, class_names = load_model(model_path)
+            except Exception as e:
+                st.error(f"Error downloading/loading default model: {e}")
+                st.info("You can upload a model file manually using the option in the sidebar.")
+                return
 
+    # Image upload
+    st.success(f"✓ Model ready — {len(class_names)} disease classes loaded")
+
+    if 'total' not in st.session_state.get('session_stats', {}) or st.session_state.session_stats['total'] == 0:
         st.markdown("### How this system works")
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -298,22 +337,8 @@ def main():
             **Step 3 — HITL Routing**
             High confidence → automated diagnosis. Low confidence → expert review with Grad-CAM heatmap.
             """)
-        return
+        st.markdown("---")
 
-    # Load model
-    with st.spinner("Loading EfficientNet-B4 model..."):
-        try:
-            import tempfile
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pt') as tmp:
-                tmp.write(model_file.read())
-                tmp_path = tmp.name
-            model, class_names = load_model(tmp_path)
-            st.success(f"✓ Model loaded — {len(class_names)} disease classes ready")
-        except Exception as e:
-            st.error(f"Error loading model: {e}")
-            return
-
-    # Image upload
     st.markdown("### 📸 Upload Leaf Image")
     uploaded_img = st.file_uploader(
         "Choose a leaf photo",
