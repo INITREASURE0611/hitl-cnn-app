@@ -235,7 +235,7 @@ def main():
     <div class="main-header">
         <h1>🌿 HITL-CNN Crop Disease Diagnostic System</h1>
         <p>Hybrid Vision Model · EfficientNet-B4 · MC Dropout UQ · Grad-CAM XAI<br>
-        Student: 2443512 · Supervisor: Dr Ihsan Mansoor · MRes Artificial Intelligence</p>
+        Student: 2443512 · Supervisor: Dr Ihsan Mansoor · MRes Computing</p>
     </div>
     """, unsafe_allow_html=True)
 
