@@ -109,7 +109,7 @@ class EfficientNetB4_HITL(nn.Module):
 
 # ── MODEL SOURCE ──────────────────────────────────────────────────────────────
 # Hosted on Hugging Face — downloaded automatically on first app load.
-# Student: 2443512 | Model: EfficientNet-B4 HITL-CNN (99.77% test accuracy)
+# Student: 2443512 | Model: EfficientNet-B4 HITL-CNN (99.69% test accuracy)
 MODEL_URL = "https://huggingface.co/Initreasure/hitl-cnn-model/resolve/main/efficientnet_b4_hitl.pt"
 MODEL_CACHE_PATH = "/tmp/efficientnet_b4_hitl.pt"
 
@@ -146,7 +146,7 @@ def preprocess(img_pil, size=224):
     ])
     return tfm(img_pil).unsqueeze(0)
 
-def mc_predict(model, tensor, T=50, temperature=0.8761):
+def mc_predict(model, tensor, T=50, temperature=0.8681):
     model.eval()
     probs_list = []
     with torch.no_grad():
@@ -235,7 +235,7 @@ def main():
     <div class="main-header">
         <h1>🌿 HITL-CNN Crop Disease Diagnostic System</h1>
         <p>Hybrid Vision Model · EfficientNet-B4 · MC Dropout UQ · Grad-CAM XAI<br>
-        Student: 2443512 · Supervisor: Dr Ihsan Mansoor · MRes Computing</p>
+        Student: 2443512 · Supervisor: Dr Ihsan Mansoor · MRes Artificial Intelligence</p>
     </div>
     """, unsafe_allow_html=True)
 
